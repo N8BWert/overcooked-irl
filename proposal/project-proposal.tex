@@ -1,0 +1,103 @@
+\documentclass{article}
+
+\usepackage[final]{corl_2026}
+
+\usepackage{amsmath,amssymb,amsfonts}
+% \usepackage{amsthm}
+% \usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{array}
+\usepackage{hyperref}
+%\usepackage{subcaption}
+%\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{hhline}
+\usepackage{makecell}
+\usepackage{svg}
+\usepackage{enumitem}
+\usepackage{pdfpages}
+% \usepackage{ulem}
+% \usepackage{enumitem}
+
+\title{\LARGE \bf
+	Cooperative Overcooking through Wide Populations and Intent Prediction
+}
+
+\author{
+	Nathaniel Wert \\
+    \texttt{nwert3@gatech.edu} \\
+    \And
+    Shaoyu Zeng\\
+    \texttt{szeng87@gatech.edu}\\
+    \And
+    Joe Zhu \\
+    \texttt{jzhu479@gatech.edu} \\
+}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+\section{What are you trying to do?}
+
+Overcooked is a cooperative multiplayer game where players work together to prepare and serve meals to customers.  This game requires a large amount of cooperation between players to succeed.  Our goal with this project is to train an AI to cooperate effectively with human players in the game to improve overall team performance.
+
+\section{How is it done today, and what are the limits of the current practice?}
+
+From a brief literature review, a variety of approaches have been explored for training AI agents to play various simplified versions of the Overcooked game.  The first paper exploring the Overcooked environment for AI research seems to be Carroll et al.\cite{carroll_utility_2019} where a simplified version of the game with a single ingredient and a single recipe was used to study the challenges of cooperative multi-agent systems.  Over time, a number of different methodologies have been applied to the Overcooked environment, including Bayesian Delegation\cite{wu_too_2021}, hierarchical active inferences\cite{poppel_resonating_2022}, and maximum entropy population-based training\cite{zhao_maximum_2023}.
+
+In general, two major camps of approaches have emerged in the literatures.  The first camp, is training the AI agents with a wide variety of teammates with the idea that agents exposed to a wide variety of teammates will develop more robust and adaptable cooperative strategies\cite{zhao_maximum_2023}\cite{strouse_collaborating_2021}.  The other major camp is training agents to make predictions about the intent of their teammate, allowing them to adapt their own actions based on the anticipated behavior of their partner\cite{wu_too_2021}\cite{poppel_resonating_2022}.
+
+One limitation with many of these approaches is that they often rely on a heavily simplified version of the Overcooked game, which tend to not capture the full complexity and dynamic nature of the actual game environment.  Specifically, most studies use only a single ingredient and a single recipe\cite{carroll_utility_2019}\cite{zhao_maximum_2023}\cite{wu_too_2021} and/or use a significantly limited set of environments\cite{poppel_resonating_2022}\cite{zhu_multi-agent_2024}.  Additionally, we have yet to find papers where incoming dishes are dynamically generated and varied, which is a key aspect of the actual game.  These limitations are not lost in the literature and Ruhdorfer et al.\cite{ruhdorfer_overcooked_2025} highlight the need for more comprehensive and realistic environments to accurately evaluate AI agents' cooperative capabilities.
+
+The second main limitation addressed in the literature is that most of these approaches tend to train on human proxies and lack direct interaction with actual human players.  The main catalyst behind the original paper\cite{carroll_utility_2019} was to show that humans collaborating with agents trained directly with deep reinforcement learning tend to perform incredibly poorly.  In response, Zhao et al.\cite{zhao_maximum_2023} trained on a human proxy and demonstrated improved performance when interacting with actual human players and Wu et.al\cite{wu_too_2021} and Poppel et al.\cite{poppel_resonating_2022} emphasize creating models to infer partner behavior to better adapt to human collaborators.
+
+\section{What is new in your approach and why do you think it will be successful?}
+
+Earlier, we detailed the two main camps for approaching the Overcooked cooperation problem (wide populations and intent prediction).  Our goal is to combine elements of both approaches to create a more robust and adaptable AI agent that can effectively collaborate with human players in a more realistic representation of the game.  For our bases of comparison, we will be building specifically off of the work from Strouse et al.\cite{strouse_collaborating_2021} (wide populations) and Aroca-Oullette et al.\cite{aroca-ouellette_implicitly_2025} (intent prediction).  First, in Strouse et al., the concept of Fictitious Co-Play (FCP) is introduced, where the agent is trained as the best response to a population of self-play agents as well as their past checkpoints.  In Aroca-Ouellette et al., the idea of implicitly aligning humans and autonomous agents through shared task abstractions is explored, highlighting the importance of understanding and adapting to the partner's behavior in collaborative tasks via Hierarchical Reinforcement Learning (HA$^2$).
+
+Using these methods as ablations and a baseline, we will be attempting to integrate wide population training for the high-level manager in the HA$^2$ architecture.  Ideally, this should enable the high-level manager in the HA$^2$ architecture to develop more robust and adaptable cooperative strategies than the baseline HA$^2$ architecture alone.  Additionally, Aroca-Oullette et al.\cite{aroca-ouellette_implicitly_2025} compares their fictitious co-play method against a human-proxy method, but does not explore including a human proxy into the co-play pool, which we will also explore in our experiments.
+
+Our other major deviation from previous approaches is to model the Overcooked game more closely.  As discussed earlier, most studies use heavily simplified versions of the game with limited ingredients, recipes, and environments.  Our goal is to utilize the Overcooked V2 environment\cite{mcdonald2026cogrid} as the beginnings of a more faithful representation of the actual game.  This environment provides stochastic recipe selection and more extensibility for adding additional dishes and ingredients, allowing us to better capture the dynamic and complex nature of the actual game.
+
+\section{Who cares? If you are successful, what difference will it make?}
+
+The idea of being able to train AI agents that can effectively collaborate with human players with minimal coordination has been a prominent goal in the field of multi-agent systems and human-robot interaction\cite{bard_hanabi_2020}\cite{klien_ten_2004}\cite{dafoe_open_2020}.  In general, the idea has been that if AI agents can learn to adapt to human behavior and anticipate what actions humans are going to take, then they can contribute more effectively toward human-robot collaboration.  Overcooked (and by extension our Overcooked V2 environment), provides a perfect environment for studying and developing collaborative agents.  Specifically, the wide variety of high-level tasks and importance of inferring the partner's intent make it an ideal setting for testing and refining our approach.  Therefore, by developing an agent that more efficiently adapts to human behavior and anticipates partner actions, we can significantly improve the overall effectiveness of human-robot collaboration in dynamic and complex environments.
+
+\section{What are the risks?}
+
+By switching to a more realistic environment, we introduce additional complexity and variance into our agent's training.  One possible risk is that the FCP and HA$^2$ methods do not scale to the increased complexity and dynamic nature of the Overcooked V2 environment, potentially leading to less effective or unstable agent behavior.  Additionally, the increased realism may make it more challenging to isolate the contributions of our specific approach compared to baseline methods, complicating the evaluation and interpretation of results.  If this is the case, we may need to relax our environment back to the Overcooked V1 environment.  Fortunately, this should not meaningfully impact our main contribution (the combined FCP HA$^2$ approach), but it may limit the generalizability of our findings to the full complexity of the actual game.
+
+\section{How much will it cost?}
+
+The main costs for this project will be in adapting the Overcooked V2 environment to our specific use case (or at learning how to use it effectively), the data collection and compute to train our agents, and the human effort required to evaluate the performance of our agents in the environment.  From our preliminary searches, the Overcooked V2 environment seems relatively easy to setup and utilize, which should help mitigate some of the initial costs associated with adapting the environment.  As for collecting data and training our agents, we will likely have to spend a large amount of the project's time and resources reproducing the results of previous studies and generating sufficient data for our own experiments.  Finally, to actually evaluate the performance of our agents, we will need to either perform a sufficient number of human trials to evaluate the agents or train additional AI agents to serve as proxies for human players.  We will likely explore the option of training a human proxy for each of ourselves individually to use as a baseline human proxy for our experiments due to time constraints.
+
+\section{How long will it take?}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/GantChart.png}
+    \caption{Gantt chart for the project timeline.}
+\end{figure}
+
+\section{What are the mid-term and final ``exams'' to check for success?}
+
+\subsection{Mid-term ``Exam''}
+
+For the mid-term ``exam'', we would like to have a functioning Overcooked V2 environment where a human player can interact with an FCP and HA$^2$ agent, demonstrating the basic capabilities of our baselines in the environment.
+
+\subsection{Final ``Exam''}
+
+For the final ``exam'', we would like to have a fully trained combined FCP HA$^2$ agent that can effectively collaborate with a human player in the Overcooked V2 environment, demonstrating the success of our approach in improving human-robot collaboration.  We would additionally like to demonstrate that combining these approaches produced noticeable and significant improvements over the individual baseline methods.
+
+\newpage
+\bibliography{irl_references}
+
+\end{document}
