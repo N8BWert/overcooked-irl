@@ -24,6 +24,18 @@
 % \usepackage{ulem}
 % \usepackage{enumitem}
 
+% Compact spacing for the two-page proposal body.
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\@maketitle}{\vskip 0.1in}{\vskip 0pt}{}{}
+\patchcmd{\@maketitle}{\vskip 0.3in \@minus 0.1in}{\vskip 4pt}{}{}
+\renewcommand{\section}{\@startsection{section}{1}{\z@}{-1.2ex plus -0.3ex minus -0.2ex}{0.6ex plus 0.2ex}{\large\bf\raggedright}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}{-1.0ex plus -0.2ex minus -0.1ex}{0.3ex plus 0.1ex}{\normalsize\bf\raggedright}}
+\makeatother
+\setlength{\parskip}{4pt}
+\setlength{\textfloatsep}{8pt}
+\setlength{\intextsep}{8pt}
+
 \title{\LARGE \bf
 	Cooperative Overcooking through Wide Populations and Intent Prediction
 }
@@ -47,35 +59,37 @@
 
 \section{What are you trying to do?}
 
-Overcooked is a cooperative multiplayer game where players work together to prepare and serve meals to customers.  This game requires a large amount of cooperation between players to succeed.  Our goal with this project is to train an AI to cooperate effectively with human players in the game to improve overall team performance.
+Overcooked is a cooperative game where players prepare and serve meals together.  Our goal is to train an AI agent to cooperate effectively with human players and improve team performance.
 
 \section{How is it done today, and what are the limits of the current practice?}
 
-Carroll et al.\cite{carroll_utility_2019} introduced the Overcooked-AI environment to study human-AI cooperation and explored how modeling human behavior could improve coordination.  Since then, many approaches have used this environment to study cooperative agents.  We broadly group these approaches into two major camps.  The first camp trains AI agents with a wide variety of teammates, with the idea that exposure to diverse teammates will lead to more robust and adaptable cooperative strategies\cite{zhao_maximum_2023,strouse_collaborating_2021}.  The other camp explicitly infers teammates' intentions from their observed actions using model-based reasoning, allowing agents to adapt their own actions based on the inferred goals and anticipated behavior of their partners\cite{wu_too_2021,poppel_resonating_2022}.
+Carroll et al.\cite{carroll_utility_2019} introduced Overcooked-AI to study human-AI cooperation and explored how modeling human behavior improves coordination.  Subsequent work broadly falls into two major camps.  The first trains agents with diverse teammates to develop robust and adaptable cooperative strategies\cite{zhao_maximum_2023,strouse_collaborating_2021}.  The other explicitly infers teammates' intentions from observed actions using model-based reasoning, allowing agents to adapt to their partners' inferred goals and anticipated behavior\cite{wu_too_2021,poppel_resonating_2022}.
 
-One limitation with many of these approaches is that they often rely on a heavily simplified version of the Overcooked game, which tend to not capture the full complexity and dynamic nature of the actual game environment.  Specifically, most studies use only a single ingredient and a single recipe\cite{carroll_utility_2019}\cite{zhao_maximum_2023}\cite{wu_too_2021} and/or use a significantly limited set of environments\cite{poppel_resonating_2022}\cite{zhu_multi-agent_2024}.  Additionally, we have yet to find papers where incoming dishes are dynamically generated and varied, which is a key aspect of the actual game.  These limitations are not lost in the literature and Ruhdorfer et al.\cite{ruhdorfer_overcooked_2025} highlight the need for more comprehensive and realistic environments to accurately evaluate AI agents' cooperative capabilities.
+One limitation is that many studies use simplified versions of Overcooked with a single ingredient and recipe\cite{carroll_utility_2019,zhao_maximum_2023,wu_too_2021} or a limited set of environments\cite{poppel_resonating_2022,zhu_multi-agent_2024}.  These settings often omit changing target dishes, an important aspect of the original game.  Ruhdorfer et al.\cite{ruhdorfer_overcooked_2025} similarly highlight the need for more comprehensive environments to evaluate cooperation.
 
-Another limitation of these RL-based approaches is that real human players are not directly involved in training.  Instead, agents are trained with other AI agents\cite{strouse_collaborating_2021,zhao_maximum_2023} or models that clone human behavior\cite{carroll_utility_2019}, and are later tested with real people.  While Carroll et al.\cite{carroll_utility_2019} showed that training an agent with a behavior-cloned human teammate improved its performance with real human players compared with self-play-based training, which indicate the importance of human input.
+Another limitation of these RL-based approaches is that human players are not directly involved in training.  Agents instead train with other AI agents\cite{strouse_collaborating_2021,zhao_maximum_2023} or behavior-cloned human models\cite{carroll_utility_2019}, before evaluation with real people.  Carroll et al.\cite{carroll_utility_2019} showed that training with a human model improved collaboration with real players compared with self-play-based training, suggesting the value of human input.
 
 \section{What is new in your approach and why do you think it will be successful?}
 
-Earlier, we detailed the two main camps for approaching the Overcooked cooperation problem (wide populations and intent prediction).  Our goal is to combine elements of both approaches to create a more robust and adaptable AI agent that can effectively collaborate with human players.  We will build on FCP\cite{strouse_collaborating_2021}, which trains an agent with a population of self-play agents and their past checkpoints, and HA$^2$\cite{aroca-ouellette_implicitly_2025}, which separates high-level sub-task selection from low-level execution.  HA$^2$ already includes FCP-based training, but does not explicitly predict the partner's intent.  To add this element, we will draw on the explicit intention inference used in Bayesian Delegation\cite{wu_too_2021} and HAICA\cite{poppel_resonating_2022}.
+Our goal is to combine wide population training and intent prediction to create a more adaptable human collaborator.  We will build on FCP\cite{strouse_collaborating_2021}, which trains an agent with self-play agents and their past checkpoints, and HA$^2$\cite{aroca-ouellette_implicitly_2025}, which separates high-level sub-task selection from low-level execution.  HA$^2$ already includes FCP-based training, but does not explicitly predict partner intent.  For this element, we will draw on Bayesian Delegation\cite{wu_too_2021} and HAICA\cite{poppel_resonating_2022}.
 
-Using these methods as baselines and ablations, we will extend HA$^2$ with an FCP training pool that also includes behavior-cloned human proxies and an intent prediction component that infers the sub-task a teammate is currently performing from their observed behavior.  The inferred intent will be provided to the high-level manager to help it select complementary sub-tasks and to the low-level worker to help it coordinate its actions with the teammate.  Ideally, combining diverse training partners with explicit intent prediction should allow the agent to better adapt to human collaborators.
+We will extend HA$^2$ with an FCP pool that includes behavior-cloned human proxies and an intent predictor that infers the teammate's current sub-task from observed behavior.  The inferred intent will help the high-level manager select complementary sub-tasks and the low-level worker coordinate its actions.  Combining diverse training partners with explicit intent prediction should help the agent adapt to human collaborators.
 
-Our other major deviation from previous approaches is to adapt these methods to Overcooked V2\cite{mcdonald2026cogrid}.  Its stochastic recipe selection and support for additional ingredients allow us to study more challenging and varied tasks that more closely resemble the original game.  In particular, changing target recipes require agents to adapt their behavior rather than follow a fixed cooking routine.
+We will also include direct human feedback during training.  Human reviewers will examine self-play rollouts, label or correct inferred teammate sub-tasks, and suggest better cooperative actions.  These labels and suggestions will fine-tune the intent and action models, with further rollouts used to check improvements.  We may draw on evaluative or corrective feedback from TAMER or COACH, without committing to a specific algorithm.
+
+We will adapt these methods to Overcooked V2\cite{mcdonald2026cogrid}, whose stochastic recipe selection and additional ingredients create more varied tasks resembling the original game.  Changing target recipes require agents to adapt rather than follow a fixed cooking routine.
 
 \section{Who cares? If you are successful, what difference will it make?}
 
-The idea of being able to train AI agents that can effectively collaborate with human players with minimal coordination has been a prominent goal in the field of multi-agent systems and human-robot interaction\cite{bard_hanabi_2020}\cite{klien_ten_2004}\cite{dafoe_open_2020}.  In general, the idea has been that if AI agents can learn to adapt to human behavior and anticipate what actions humans are going to take, then they can contribute more effectively toward human-robot collaboration.  Overcooked (and by extension our Overcooked V2 environment), provides a perfect environment for studying and developing collaborative agents.  Specifically, the wide variety of high-level tasks and importance of inferring the partner's intent make it an ideal setting for testing and refining our approach.  Therefore, by developing an agent that more efficiently adapts to human behavior and anticipates partner actions, we can significantly improve the overall effectiveness of human-robot collaboration in dynamic and complex environments.
+Effective cooperation with unfamiliar human partners is a major goal in multi-agent systems and human-robot interaction\cite{bard_hanabi_2020,klien_ten_2004,dafoe_open_2020}.  Overcooked V2 offers a controlled setting to test whether learning teammate intent and incorporating direct human feedback improve collaboration.  Our results could help identify when these mechanisms benefit shared-task performance in dynamic environments.
 
 \section{What are the risks?}
 
-By switching to a more realistic environment, we introduce additional complexity and variance into our agent's training.  One possible risk is that the FCP and HA$^2$ methods do not scale to the increased complexity and dynamic nature of the Overcooked V2 environment, potentially leading to less effective or unstable agent behavior.  Additionally, the increased realism may make it more challenging to isolate the contributions of our specific approach compared to baseline methods, complicating the evaluation and interpretation of results.  If this is the case, we may need to relax our environment back to the Overcooked V1 environment.  Fortunately, this should not meaningfully impact our main contribution (the combined FCP HA$^2$ approach), but it may limit the generalizability of our findings to the full complexity of the actual game.
+V2 increases training complexity, and the intent-aware HA$^2$/FCP model may be difficult to train within the project timeline.  Human intent labels may also be ambiguous or inconsistent.  We will begin with simple V2 layouts, fewer recipes, larger observation windows, and limited feedback rounds before increasing difficulty.  Controlled comparisons will assess the contributions of intent prediction and human feedback.
 
 \section{How much will it cost?}
 
-The main costs for this project will be in adapting the Overcooked V2 environment to our specific use case (or at learning how to use it effectively), the data collection and compute to train our agents, and the human effort required to evaluate the performance of our agents in the environment.  From our preliminary searches, the Overcooked V2 environment seems relatively easy to setup and utilize, which should help mitigate some of the initial costs associated with adapting the environment.  As for collecting data and training our agents, we will likely have to spend a large amount of the project's time and resources reproducing the results of previous studies and generating sufficient data for our own experiments.  Finally, to actually evaluate the performance of our agents, we will need to either perform a sufficient number of human trials to evaluate the agents or train additional AI agents to serve as proxies for human players.  We will likely explore the option of training a human proxy for each of ourselves individually to use as a baseline human proxy for our experiments due to time constraints.
+The main costs are environment setup, training data and compute, and human annotation and feedback.  We will limit layouts and review rounds, and explore behavior-cloned proxies from our own gameplay for the FCP pool.  Proxies will support training and repeatable evaluation; direct feedback will refine the model, and human co-play trials will assess actual collaboration.
 
 \section{How long will it take?}
 
@@ -89,11 +103,11 @@ The main costs for this project will be in adapting the Overcooked V2 environmen
 
 \subsection{Mid-term ``Exam''}
 
-For the mid-term ``exam'', we would like to have a functioning Overcooked V2 environment where a human player can interact with an FCP and HA$^2$ agent, demonstrating the basic capabilities of our baselines in the environment.
+By mid-term, we aim to have a working V2 environment with HA$^2$/FCP baselines for human co-play, an initial teammate intent predictor, and a workflow for reviewing rollouts and collecting sub-task labels or behavioral suggestions.
 
 \subsection{Final ``Exam''}
 
-For the final ``exam'', we would like to have a fully trained combined FCP HA$^2$ agent that can effectively collaborate with a human player in the Overcooked V2 environment, demonstrating the success of our approach in improving human-robot collaboration.  We would additionally like to demonstrate that combining these approaches produced noticeable and significant improvements over the individual baseline methods.
+Our final agent will combine HA$^2$/FCP, human proxies in the partner pool, intent prediction, and human-guided fine-tuning.  We will compare three approaches: the HA$^2$/FCP baseline, an intent-aware variant without direct human feedback, and the full model with feedback.  Evaluation will measure team performance with humans and held-out agent partners, intent prediction accuracy, and human feedback effort, including where the additions help or fail.
 
 \newpage
 \bibliography{irl_references}
