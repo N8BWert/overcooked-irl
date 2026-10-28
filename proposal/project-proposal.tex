@@ -108,6 +108,7 @@ By mid-term, we aim to have a working V2 environment with HA$^2$/FCP baselines f
 \subsection{Final ``Exam''}
 
 Our final agent will combine HA$^2$/FCP, human proxies in the partner pool, intent prediction, and human-guided fine-tuning.  We will compare three approaches: the HA$^2$/FCP baseline, an intent-aware variant without direct human feedback, and the full model with feedback.  Evaluation will measure team performance with humans and held-out agent partners, intent prediction accuracy, and human feedback effort, including where the additions help or fail.
+Our evaluation will primarily use the environment's cumulative game reward, which rewards correct dish deliveries and penalizes incorrect ones, across multiple trials with human players and held-out agent partners. We will also evaluate intent prediction accuracy using labeled gameplay trajectories. Human participants will complete a short survey assessing the agent's cooperation, adaptability, predictability, and the frustration experienced while playing alongside it. These results will be compared across the three approaches to determine whether intent prediction and human feedback improve human-agent collaboration.
 
 \newpage
 \bibliography{irl_references}
