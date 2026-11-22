@@ -1,0 +1,24 @@
+[project]
+name = "human-cooperation"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "N8BWert", email = "n8.wert.b@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "cogrid>=0.3.2",
+    "jax>=0.12.1",
+    "opencv-python>=5.1.0.95",
+    "pygame-ce>=2.5.8",
+    "layouts",
+    "common",
+]
+
+[project.scripts]
+human-cooperation = "human_cooperation:main"
+
+[build-system]
+requires = ["uv_build>=0.12.18,<0.13.0"]
+build-backend = "uv_build"

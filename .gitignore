@@ -1,3 +1,14 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
@@ -329,3 +340,11 @@ TSWLatexianTemp*
 # option is specified. Footnotes are the stored in a file with suffix Notes.bib.
 # Uncomment the next line to have this generated file ignored.
 #*Notes.bib
+
+# Pytest
+.pytest_cache/*
+__pychache__/
+
+# API keys YAYYY
+*.env
+.env

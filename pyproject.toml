@@ -1,0 +1,20 @@
+[project]
+name = "overcooked-irl"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "N8BWert", email = "n8.wert.b@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv.sources]
+layouts = { workspace = true }
+common = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "packages/*",
+]
+

@@ -1,0 +1,8 @@
+CCCCCC CuuuuC
+O    C C  + C
+T    CCC    C
+B           X
+M    CCC    X
+C    C C    C
+C    C C  + C
+CCCCCC C====C
