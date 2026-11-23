@@ -9,6 +9,8 @@ from cogrid.cogrid_env import CoGridEnv
 from cogrid.envs.overcooked import v2_objects
 from layouts import register_layouts
 from common.ui_utilities import draw_orders
+from dataclasses import replace
+from human_cooperation.save_gameplay import GameplayLog
 
 # Player 1 action scheme
 P1_ACTION_SCHEME = {
@@ -66,7 +68,7 @@ def read_action(keys: list[int], pending: set[int], scheme: dict[str, dict[int, 
             return a
     return noop
 
-def draw_frame(screen: pygame.Surface, env: CoGridEnv):
+def draw_frame(screen: pygame.Surface, env: CoGridEnv, score):
     results = [r.result for r in v2_objects.OPEN_POT_RECIPES]
     frame = env.get_full_render()
     h, w = frame.shape[:2]
@@ -75,46 +77,74 @@ def draw_frame(screen: pygame.Surface, env: CoGridEnv):
     screen.fill((20, 20, 20))
     screen.blit(surf, (0, ORDER_DISPLAY_HEIGHT))
     draw_orders(screen, env, results)
+    text = pygame.font.Font(None, 28).render(str(int(score)), True, (255, 255, 255))
+    screen.blit(text, (screen.get_width() - text.get_width() - 8, 8))
+
+def show_seconds(original_render):
+    def pot_timer_to_seconds(self, tile_img):
+        steps = self.cooking_timer
+        if steps == 0:
+            self.cooking_timer = "F"
+        else:
+            self.cooking_timer = f"{steps * TICK_MS / 1000:.0f}s"
+        original_render(self, tile_img)
+        self.cooking_timer = steps
+    return pot_timer_to_seconds
 
 def main():
     layout_name, menu_name = parse_args()
     register_layouts(layout_name, menu_name)
     env = registry.make(f"OvercookedV2-{layout_name}-{menu_name}", render_mode="rgb_array")
-    obs, info = env.reset(seed=0)
+    seed = 0
+    obs, info = env.reset(seed=seed)
     p1, p2 = env.possible_agents[:2]
+    v2_objects.OPEN_POT_RECIPES[:] = [replace(recipe, cook_time=25) for recipe in v2_objects.OPEN_POT_RECIPES]
+    v2_objects.OpenPot.render = show_seconds(v2_objects.OpenPot.render)
 
     pygame.init()
     h, w = env.get_full_render().shape[:2]
     screen = pygame.display.set_mode((w * SCALE, h * SCALE + ORDER_DISPLAY_HEIGHT))
     clock = pygame.time.Clock()
     last_tick, pending = 0, set()
+    gameplay_log = GameplayLog(layout_name, menu_name)
+    gameplay_log.start_episode(seed)
+    score = 0
 
     running = True
-    while running:
-        for e in pygame.event.get():
-            if e.type == pygame.QUIT:
-                running = False
-            elif e.type == pygame.KEYDOWN:
-                pending.add(e.key)
+    try:
+        while running:
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
+                    running = False
+                elif e.type == pygame.KEYDOWN:
+                    pending.add(e.key)
 
-        now = pygame.time.get_ticks()
-        if now - last_tick >= TICK_MS:
-            keys = pygame.key.get_pressed()
-            actions = {
-                p1: read_action(keys, pending, P1_ACTION_SCHEME, noop=6),
-                p2: read_action(keys, pending, P2_ACTION_SCHEME, noop=6)
-            }
-            pending.clear()
-            obs, rewards, terms, truncs, info = env.step(actions)
-            last_tick = now
-            if not env.agents:
-                obs, info = env.reset()
+            now = pygame.time.get_ticks()
+            if now - last_tick >= TICK_MS:
+                keys = pygame.key.get_pressed()
+                actions = {
+                    p1: read_action(keys, pending, P1_ACTION_SCHEME, noop=6),
+                    p2: read_action(keys, pending, P2_ACTION_SCHEME, noop=6)
+                }
+                pending.clear()
+                gameplay_log.record(env, actions)   
+                obs, rewards, terms, truncs, info = env.step(actions)
+                score += sum(rewards.values())
+                last_tick = now
+                if not env.agents:
+                    gameplay_log.finish_episode()
+                    obs, info = env.reset()
+                    score = 0
+                    gameplay_log.start_episode(env.reset.__kwdefaults__["seed"])
 
-            # Render the environment
-            draw_frame(screen, env)
+                # Render the environment
+                draw_frame(screen, env, score)
 
-        pygame.display.flip()
-        clock.tick(60)
-
+            pygame.display.flip()
+            clock.tick(60)
+    finally:
+        if gameplay_log._episode:
+            gameplay_log.finish_episode()
+            gameplay_log.save()
     pygame.quit()
     

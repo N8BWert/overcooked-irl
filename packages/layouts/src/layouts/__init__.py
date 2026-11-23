@@ -152,6 +152,7 @@ def register_layouts(
     cfg["tick_fn"] = build_order_tick(order_cfg, recipe_results=results)
     cfg["extra_state_init_fn"] = functools.partial(build_order_extra_state, order_cfg)
     cfg["render_hud_fn"] = build_order_hud_fn(order_cfg)
+    cfg["max_steps"] = 900
 
     print(f"Registering layout: {layout_name}")
     registry.register(f"OvercookedV2-{layout_name}-{menu_name}", functools.partial(_make_v2_env, config=cfg))
