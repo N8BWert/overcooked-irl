@@ -1,0 +1,102 @@
+[
+  {
+    "seed": 1000,
+    "steps": 900,
+    "team_return": 160.0,
+    "deliveries_by_player": [
+      5,
+      7
+    ],
+    "deliveries": 12
+  },
+  {
+    "seed": 1001,
+    "steps": 900,
+    "team_return": 100.0,
+    "deliveries_by_player": [
+      1,
+      8
+    ],
+    "deliveries": 9
+  },
+  {
+    "seed": 1002,
+    "steps": 900,
+    "team_return": 160.0,
+    "deliveries_by_player": [
+      6,
+      6
+    ],
+    "deliveries": 12
+  },
+  {
+    "seed": 1003,
+    "steps": 900,
+    "team_return": 140.0,
+    "deliveries_by_player": [
+      5,
+      6
+    ],
+    "deliveries": 11
+  },
+  {
+    "seed": 1004,
+    "steps": 900,
+    "team_return": 120.0,
+    "deliveries_by_player": [
+      7,
+      2
+    ],
+    "deliveries": 9
+  },
+  {
+    "seed": 1005,
+    "steps": 900,
+    "team_return": 140.0,
+    "deliveries_by_player": [
+      6,
+      5
+    ],
+    "deliveries": 11
+  },
+  {
+    "seed": 1006,
+    "steps": 900,
+    "team_return": 200.0,
+    "deliveries_by_player": [
+      9,
+      3
+    ],
+    "deliveries": 12
+  },
+  {
+    "seed": 1007,
+    "steps": 900,
+    "team_return": 100.0,
+    "deliveries_by_player": [
+      2,
+      8
+    ],
+    "deliveries": 10
+  },
+  {
+    "seed": 1008,
+    "steps": 900,
+    "team_return": 120.0,
+    "deliveries_by_player": [
+      5,
+      5
+    ],
+    "deliveries": 10
+  },
+  {
+    "seed": 1009,
+    "steps": 900,
+    "team_return": 140.0,
+    "deliveries_by_player": [
+      7,
+      4
+    ],
+    "deliveries": 11
+  }
+]

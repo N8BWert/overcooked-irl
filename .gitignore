@@ -348,3 +348,11 @@ __pychache__/
 # API keys YAYYY
 *.env
 .env
+# Local training outputs; keep only the verified default model bundle.
+/checkpoints/*
+!/checkpoints/ha2/
+/checkpoints/ha2/*
+!/checkpoints/ha2/worker.zip
+!/checkpoints/ha2/manager.zip
+!/checkpoints/ha2/config.json
+!/checkpoints/ha2/evaluation_1000.json

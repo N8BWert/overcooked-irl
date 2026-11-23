@@ -1,0 +1,33 @@
+{
+  "layout": "kitchen",
+  "menu": "onion",
+  "horizon": 900,
+  "observation": "full-state structured features and path distances",
+  "tasks": [
+    "get_onion",
+    "get_tomato",
+    "get_broccoli",
+    "get_mushroom",
+    "get_plate",
+    "fill_pot_0",
+    "fill_pot_1",
+    "fill_pot_2",
+    "fill_pot_3",
+    "get_soup_pot_0",
+    "get_soup_pot_1",
+    "get_soup_pot_2",
+    "get_soup_pot_3",
+    "deliver",
+    "put_on_counter",
+    "get_from_counter",
+    "wait"
+  ],
+  "shared_parameters": true,
+  "fcp": false,
+  "cogrid_version": "0.3.2",
+  "gamma": 0.99,
+  "worker_inference": "sampled",
+  "task_rules": "plate demand; wait only without productive tasks",
+  "feature_version": 1,
+  "worker_sha256": "b50337ab1d2994dbab5adab53a87f308e99ce3718423de955d87191227d34925"
+}
