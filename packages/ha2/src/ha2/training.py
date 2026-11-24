@@ -19,8 +19,12 @@ class SelfPlay(VecEnv):
         worker=None,
         seed=0,
         curriculum=False,
+        feature_version=1,
+        recipe_mask=False,
     ):
-        self.world = World(layout, menu)
+        self.world = World(
+            layout, menu, feature_version=feature_version, recipe_mask=recipe_mask
+        )
         self.stage, self.worker = stage, worker
         self.curriculum = curriculum
         self.rng = np.random.default_rng(seed)

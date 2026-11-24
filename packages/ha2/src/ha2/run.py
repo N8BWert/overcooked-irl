@@ -20,8 +20,12 @@ def train(args):
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
     config_path = output / "config.json"
+    feature_version = 2
+    recipe_mask = True
     if config_path.exists() and (args.resume or args.stage == "manager"):
         previous = json.loads(config_path.read_text(encoding="utf-8"))
+        feature_version = previous.get("feature_version", 1)
+        recipe_mask = previous.get("menu_recipe_mask", feature_version >= 2)
         if (previous["layout"], previous["menu"]) != (args.layout, args.menu):
             raise ValueError(
                 "Checkpoint layout/menu differs; use a new output directory."
@@ -34,7 +38,14 @@ def train(args):
         PPO.load(output / "worker", device="cpu") if args.stage == "manager" else None
     )
     env = SelfPlay(
-        args.stage, args.layout, args.menu, worker, args.seed, args.curriculum
+        args.stage,
+        args.layout,
+        args.menu,
+        worker,
+        args.seed,
+        args.curriculum,
+        feature_version,
+        recipe_mask,
     )
     algorithm = PPO if args.stage == "worker" else MaskablePPO
     path = output / args.stage
@@ -68,7 +79,8 @@ def train(args):
         "gamma": 0.99,
         "worker_inference": "sampled",
         "task_rules": "plate demand; wait only without productive tasks",
-        "feature_version": 1,
+        "feature_version": feature_version,
+        "menu_recipe_mask": recipe_mask,
     }
     (output / "config.json").write_text(
         json.dumps(metadata, indent=2), encoding="utf-8"
@@ -93,6 +105,8 @@ def train(args):
                     "stage": args.stage,
                     "seed": args.seed,
                     "curriculum": args.curriculum,
+                    "menu_recipe_mask": recipe_mask,
+                    "practice_orders": bool(args.curriculum and recipe_mask),
                     "resume": args.resume,
                     "model_steps": model.num_timesteps,
                     "seconds": time.monotonic() - started,
@@ -115,7 +129,14 @@ def evaluate(args):
         raise ValueError("The worker checkpoint changed after training this manager.")
     worker = PPO.load(output / "worker", device="cpu")
     if args.worker_only:
-        env = SelfPlay("worker", config["layout"], config["menu"], seed=args.seed)
+        env = SelfPlay(
+            "worker",
+            config["layout"],
+            config["menu"],
+            seed=args.seed,
+            feature_version=config.get("feature_version", 1),
+            recipe_mask=config.get("menu_recipe_mask", False),
+        )
         obs = env.reset()
         counts = {name: [0, 0] for name in env.world.tasks}
         for _ in range(args.steps // 2):
@@ -139,7 +160,13 @@ def evaluate(args):
         env.close()
         return
     manager = MaskablePPO.load(output / "manager", device="cpu")
-    w = World(config["layout"], config["menu"], config["horizon"])
+    w = World(
+        config["layout"],
+        config["menu"],
+        config["horizon"],
+        config.get("feature_version", 1),
+        config.get("menu_recipe_mask", False),
+    )
     reports = []
     screen = clock = None
     if args.render:
@@ -157,6 +184,8 @@ def evaluate(args):
         torch.manual_seed(seed)
         w.reset(seed)
         score, deliveries = 0.0, [0, 0]
+        by_recipe = {r.result: 0 for r in w.training_recipes}
+        incorrect = 0
         for step in range(config["horizon"]):
             inputs = np.stack([w.manager_obs(a) for a in range(2)])
             masks = np.stack([w.mask(a) for a in range(2)])
@@ -172,13 +201,19 @@ def evaluate(args):
             goals = [w.targets(a, tasks[a]) for a in range(2)]
             _, rewards, terms, truncs, _ = w.step(primitive)
             score += rewards[0]
+            available = list(previous.extra_state["overcooked.order_recipe"])
             for a in range(2):
-                if (
-                    tasks[a] == w.wait - 3
-                    and w.completed(a, tasks[a], previous, goals[a], primitive[a])
-                    and rewards[0] > 0
+                if tasks[a] == w.wait - 3 and w.completed(
+                    a, tasks[a], previous, goals[a], primitive[a]
                 ):
-                    deliveries[a] += 1
+                    recipe = w.recipe_ids.index(int(previous.agent_inv[a, 0]))
+                    if recipe in available:
+                        available.remove(recipe)
+                        deliveries[a] += 1
+                        name = w.recipes[recipe].result
+                        by_recipe[name] = by_recipe.get(name, 0) + 1
+                    else:
+                        incorrect += 1
             if args.render:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -208,14 +243,20 @@ def evaluate(args):
                 break
         report = {
             "seed": seed,
+            "manager_inference": "sampled" if args.stochastic else "greedy",
+            "worker_inference": "greedy" if args.deterministic_worker else "sampled",
             "steps": step + 1,
             "team_return": score,
             "deliveries_by_player": deliveries,
             "deliveries": sum(deliveries),
+            "deliveries_by_recipe": by_recipe,
+            "incorrect_deliveries": incorrect,
+            "expired_orders": int(w.extra("order_n_expired")),
         }
         reports.append(report)
         print(json.dumps(report), flush=True)
-    report_path = output / f"evaluation_{args.seed}.json"
+    suffix = "_sampled" if args.stochastic else ""
+    report_path = output / f"evaluation_{args.seed}{suffix}.json"
     report_path.write_text(json.dumps(reports, indent=2), encoding="utf-8")
     w.env.close()
     if args.render:

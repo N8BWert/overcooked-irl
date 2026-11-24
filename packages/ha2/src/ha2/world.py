@@ -17,7 +17,16 @@ ACTION_DIR = (3, 1, 2, 0)
 
 
 class World:
-    def __init__(self, layout="kitchen", menu="onion", horizon=900):
+    def __init__(
+        self,
+        layout="kitchen",
+        menu="onion",
+        horizon=900,
+        feature_version=1,
+        recipe_mask=False,
+    ):
+        self.feature_version = feature_version
+        self.recipe_mask = recipe_mask
         name = f"OvercookedV2-{layout}-{menu}"
         if name not in registry.ENVIRONMENT_REGISTRY:
             register_layouts(layout, menu)
@@ -47,6 +56,9 @@ class World:
             r for r in self.recipes if menu_probs.get(r.result, 0) > 0
         ]
         self.allowed = {ing for r in self.training_recipes for ing in r.ingredients}
+        self.menu_ingredients = [
+            [self.ids[x] for x in r.ingredients] for r in self.training_recipes
+        ]
         self.pots = self.extra("open_pot_positions").copy()
         self.tasks = [f"get_{x}" for x in (*INGREDIENTS, "plate")]
         self.tasks += [f"fill_pot_{i}" for i in range(len(self.pots))]
@@ -79,6 +91,14 @@ class World:
     def locations(self, mask):
         return [tuple(p) for p in np.argwhere(mask)]
 
+    def fits_menu(self, pot, ingredient):
+        proposed = [int(x) for x in self.extra("open_pot_contents")[pot] if x >= 0]
+        proposed.append(ingredient)
+        return any(
+            all(proposed.count(x) <= recipe.count(x) for x in set(proposed))
+            for recipe in self.menu_ingredients
+        )
+
     def targets(self, agent, task):
         s = self.state
         held = int(s.agent_inv[agent, 0])
@@ -88,6 +108,12 @@ class World:
         if task < 5:
             item = (*INGREDIENTS, "plate")[task]
             if held != -1 or (item != "plate" and item not in self.allowed):
+                return []
+            if (
+                self.recipe_mask
+                and item != "plate"
+                and not any(self.fits_menu(i, self.ids[item]) for i in range(n))
+            ):
                 return []
             return self.locations(
                 (otm == self.ids[item + "_stack"])
@@ -99,6 +125,7 @@ class World:
             if (
                 held in [self.ids[x] for x in INGREDIENTS]
                 and np.sum(self.extra("open_pot_contents")[i] >= 0) < 3
+                and (not self.recipe_mask or self.fits_menu(i, held))
             ):
                 return [tuple(self.pots[i])]
         elif task < 5 + 2 * n:
@@ -198,6 +225,11 @@ class World:
 
     def inventory(self, held):
         categories = [-1, *(self.ids[x] for x in INGREDIENTS), self.ids["plate"]]
+        if self.feature_version >= 2:
+            categories += self.recipe_ids
+            return np.eye(len(categories), dtype=np.float32)[
+                categories.index(int(held))
+            ]
         index = categories.index(int(held)) if held in categories else 6
         return np.eye(7, dtype=np.float32)[index]
 
@@ -257,9 +289,16 @@ class World:
         )
 
     def worker_start(self, rng):
-        """Sample valid practice states; manager episodes always start normally."""
+        """Sample intermediate kitchen states for subtask and curriculum practice."""
         self.reset(seed=int(rng.integers(2**31)))
         ex = {k: v.copy() for k, v in self.state.extra_state.items()}
+        if self.recipe_mask:
+            recipes = [self.recipes.index(r) for r in self.training_recipes]
+            slots = len(ex["overcooked.order_recipe"])
+            ex["overcooked.order_recipe"][:] = rng.choice(
+                recipes, size=slots, replace=len(recipes) < slots
+            )
+            ex["overcooked.order_timer"][:] = self.env.config["orders"]["time_limit"]
         ingredients = [self.ids[x] for x in INGREDIENTS if x in self.allowed]
         for i in range(len(self.pots)):
             count = int(rng.integers(4))

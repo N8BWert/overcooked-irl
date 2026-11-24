@@ -356,3 +356,6 @@ __pychache__/
 !/checkpoints/ha2/manager.zip
 !/checkpoints/ha2/config.json
 !/checkpoints/ha2/evaluation_1000.json
+
+# Local editor settings
+.vscode/
